@@ -1,0 +1,72 @@
+name: Hourly Task Prep (No API Keys)
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: hourly-task-prep-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  prep:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Select next task
+        id: task
+        run: node scripts/select-next-task.js
+
+      - name: Create branch for task
+        if: steps.task.outputs.task_id != ''
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          BRANCH="task/${{ steps.task.outputs.task_id }}-${{ steps.task.outputs.slug }}"
+          git checkout -b "$BRANCH" || git checkout "$BRANCH"
+          mkdir -p planning/current
+          cat > planning/current/ACTIVE_TASK.md << 'EOF'
+          # Active Task
+
+          - Task ID: ${{ steps.task.outputs.task_id }}
+          - Title: ${{ steps.task.outputs.title }}
+          - Package: ${{ steps.task.outputs.package }}
+
+          ## Prompt File
+          planning/prompts/${{ steps.task.outputs.task_id }}.md
+          EOF
+          git add planning/current/ACTIVE_TASK.md
+          git commit -m "chore(task): prepare ${{ steps.task.outputs.task_id }}" || echo "No changes to commit"
+          git push --set-upstream origin "$BRANCH"
+
+      - name: Create prep issue
+        if: steps.task.outputs.task_id != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const taskId = '${{ steps.task.outputs.task_id }}';
+            const title = '${{ steps.task.outputs.title }}';
+            const pkg = '${{ steps.task.outputs.package }}';
+            const branch = `task/${taskId}-${'${{ steps.task.outputs.slug }}'}`;
+            const body = `## Hourly Task Prep\n\n- **Task:** ${taskId}\n- **Title:** ${title}\n- **Package:** ${pkg}\n- **Branch:** ${branch}\n\n### Mobile AI Instructions\n1. Open prompt file: \`planning/prompts/${taskId}.md\`\n2. Paste into Claude/Grok Android app\n3. Apply generated code to branch \`${branch}\`\n4. Open/Update PR with template\n\n### Done checklist\n- [ ] Code implemented\n- [ ] Typecheck passes\n- [ ] Tests added/updated\n- [ ] PR opened\n`;
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `[Task Prep] ${taskId} ${title}`,
+              body,
+              labels: ['ai:mobile', 'task:ready']
+            });
