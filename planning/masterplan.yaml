@@ -1,0 +1,144 @@
+version: 1
+project: web-ar-tools
+updated_at: 2026-08-27
+goals:
+  - Build a production-ready WebXR AR toolkit for browsers and headset browsers
+  - Ship modular packages with strict boundaries and semver
+  - Enable hourly autonomous delivery loops with quality gates
+
+epics:
+  - id: EPIC-01
+    title: Foundation and Monorepo
+    status: ready
+    tasks:
+      - id: TASK-001
+        title: Initialize pnpm + turbo workspace
+        package: repo
+        definition_of_done:
+          - Workspace files committed
+          - Root scripts execute successfully
+        test_plan:
+          - Run pnpm build
+        acceptance_criteria:
+          - Turbo pipeline runs with no missing task errors
+        risk_level: low
+        dependencies: []
+      - id: TASK-002
+        title: Create base TypeScript config
+        package: repo
+        definition_of_done:
+          - Strict TS settings enabled
+        test_plan:
+          - Run pnpm typecheck
+        acceptance_criteria:
+          - No config resolution errors
+        risk_level: low
+        dependencies: [TASK-001]
+
+  - id: EPIC-02
+    title: XR Core and Capabilities
+    status: ready
+    tasks:
+      - id: TASK-003
+        title: Create xr-core package shell
+        package: xr-core
+        definition_of_done:
+          - package.json and src/index.ts exist
+        test_plan:
+          - Build package
+        acceptance_criteria:
+          - Import works from app
+        risk_level: medium
+        dependencies: [TASK-001, TASK-002]
+      - id: TASK-004
+        title: Add runtime capability detector
+        package: xr-core
+        definition_of_done:
+          - API exposes support matrix object
+        test_plan:
+          - Unit tests for detection branches
+        acceptance_criteria:
+          - Returns graceful defaults on unsupported browsers
+        risk_level: medium
+        dependencies: [TASK-003]
+
+  - id: EPIC-03
+    title: Placement and Interaction
+    status: ready
+    tasks:
+      - id: TASK-005
+        title: Create anchors package shell
+        package: anchors
+        definition_of_done:
+          - package scaffold committed
+        test_plan:
+          - Build package
+        acceptance_criteria:
+          - Exported APIs compile
+        risk_level: low
+        dependencies: [TASK-001]
+      - id: TASK-006
+        title: Implement hit-test placement MVP
+        package: anchors
+        definition_of_done:
+          - Place object on surface API
+        test_plan:
+          - Unit test mocked XRFrame hit test
+        acceptance_criteria:
+          - Fallback to manual placement when unavailable
+        risk_level: high
+        dependencies: [TASK-005, TASK-004]
+
+  - id: EPIC-04
+    title: Measurement and Annotation
+    status: ready
+    tasks:
+      - id: TASK-007
+        title: Create measure package shell
+        package: measure
+        definition_of_done:
+          - Scaffold and exports created
+        test_plan:
+          - Build package
+        acceptance_criteria:
+          - Importable from app
+        risk_level: low
+        dependencies: [TASK-001]
+      - id: TASK-008
+        title: Implement distance measurement tool
+        package: measure
+        definition_of_done:
+          - Point-to-point measurement API
+        test_plan:
+          - Unit tests for metric/imperial conversion
+        acceptance_criteria:
+          - Accurate within test tolerance
+        risk_level: medium
+        dependencies: [TASK-007]
+
+  - id: EPIC-05
+    title: Shipping Pipeline
+    status: ready
+    tasks:
+      - id: TASK-009
+        title: Add changeset workflow
+        package: repo
+        definition_of_done:
+          - Changeset bot workflow exists
+        test_plan:
+          - Create test changeset and run CI
+        acceptance_criteria:
+          - Version PR flow is valid
+        risk_level: medium
+        dependencies: [TASK-001]
+      - id: TASK-010
+        title: Add package publish dry-run
+        package: repo
+        definition_of_done:
+          - pnpm publish dry-run task exists
+        test_plan:
+          - Run dry-run in CI
+        acceptance_criteria:
+          - All packages pass provenance checks
+        risk_level: medium
+        dependencies: [TASK-009]
