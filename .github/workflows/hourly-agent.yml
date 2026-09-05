@@ -33,13 +33,13 @@ jobs:
         run: pnpm install --no-frozen-lockfile
 
       - name: Lint
-        run: pnpm lint --if-present
+        run: pnpm lint
 
       - name: Typecheck
-        run: pnpm typecheck --if-present
+        run: pnpm typecheck
 
       - name: Test
-        run: pnpm test --if-present
+        run: pnpm test
 
       - name: Build
-        run: pnpm build --if-present
+        run: pnpm build
